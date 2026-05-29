@@ -9,18 +9,22 @@ import android.widget.*;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.content.res.ColorStateList;
 import java.text.*;
 import java.util.*;
 import org.json.*;
 
 public class MainActivity extends Activity {
-    final int honey = Color.rgb(246, 184, 52);
-    final int honey2 = Color.rgb(255, 205, 82);
-    final int dark = Color.rgb(13, 11, 8);
-    final int panel = Color.rgb(25, 22, 17);
-    final int card = Color.rgb(34, 29, 22);
-    final int line = Color.rgb(72, 60, 42);
-    final int muted = Color.rgb(190, 182, 168);
+    final int HONEY = Color.rgb(246, 184, 52);
+    final int HONEY_LIGHT = Color.rgb(255, 212, 96);
+    final int BG = Color.rgb(12, 10, 7);
+    final int CARD = Color.rgb(29, 25, 19);
+    final int CARD2 = Color.rgb(38, 32, 23);
+    final int FIELD = Color.rgb(20, 18, 14);
+    final int BORDER = Color.rgb(74, 60, 38);
+    final int MUTED = Color.rgb(188, 178, 160);
+    final int WHITE = Color.rgb(250, 248, 242);
+
     LinearLayout body;
     SharedPreferences sp;
     String activeTab = "Dashboard";
@@ -39,137 +43,162 @@ public class MainActivity extends Activity {
         super.onCreate(b);
         sp = getSharedPreferences("vb_expense_keeper", 0);
         if (Build.VERSION.SDK_INT >= 21) {
-            getWindow().setStatusBarColor(dark);
-            getWindow().setNavigationBarColor(dark);
+            getWindow().setStatusBarColor(BG);
+            getWindow().setNavigationBarColor(BG);
         }
         showDashboard();
     }
 
     int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
+    int statusBar() {
+        int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        return id > 0 ? getResources().getDimensionPixelSize(id) : dp(24);
+    }
 
-    GradientDrawable bg(int color, int radius) {
+    GradientDrawable round(int color, int radius) {
         GradientDrawable g = new GradientDrawable();
         g.setColor(color);
         g.setCornerRadius(dp(radius));
         return g;
     }
-
-    GradientDrawable strokeBg(int color, int radius, int strokeColor) {
-        GradientDrawable g = bg(color, radius);
-        g.setStroke(dp(1), strokeColor);
+    GradientDrawable outlined(int color, int radius, int stroke) {
+        GradientDrawable g = round(color, radius);
+        g.setStroke(dp(1), stroke);
         return g;
     }
 
-    TextView text(String s, int spSize, int color, int style) {
+    TextView tv(String s, int size, int color, int style) {
         TextView t = new TextView(this);
         t.setText(s);
-        t.setTextSize(spSize);
+        t.setTextSize(size);
         t.setTextColor(color);
         t.setTypeface(Typeface.DEFAULT, style);
-        t.setLineSpacing(0, 1.08f);
+        t.setIncludeFontPadding(true);
+        t.setLineSpacing(dp(2), 1.0f);
         return t;
     }
 
-    TextView pill(String s) {
-        TextView t = text(s, 12, honey2, Typeface.BOLD);
-        t.setPadding(dp(12), dp(7), dp(12), dp(7));
-        t.setBackground(strokeBg(Color.rgb(42, 33, 18), 30, Color.rgb(107, 82, 31)));
-        return t;
+    void add(LinearLayout parent, View child, int w, int h, int l, int t, int r, int b) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w, h);
+        lp.setMargins(dp(l), dp(t), dp(r), dp(b));
+        parent.addView(child, lp);
     }
 
-    TextView button(String s) {
-        TextView b = text(s, 15, Color.rgb(20,16,10), Typeface.BOLD);
+    TextView primaryButton(String s) {
+        TextView b = tv(s, 15, Color.rgb(17, 13, 7), Typeface.BOLD);
         b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(14), dp(14), dp(14), dp(14));
-        b.setBackground(bg(honey, 16));
+        b.setPadding(dp(14), dp(13), dp(14), dp(13));
+        b.setBackground(round(HONEY, 16));
         return b;
     }
 
-    EditText field(String hint) {
+    TextView secondaryButton(String s) {
+        TextView b = tv(s, 14, HONEY_LIGHT, Typeface.BOLD);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(dp(12), dp(12), dp(12), dp(12));
+        b.setBackground(outlined(Color.rgb(26, 22, 16), 14, BORDER));
+        return b;
+    }
+
+    TextView chip(String s) {
+        TextView c = tv(s, 11, HONEY_LIGHT, Typeface.BOLD);
+        c.setGravity(Gravity.CENTER);
+        c.setPadding(dp(10), dp(5), dp(10), dp(5));
+        c.setBackground(outlined(Color.rgb(42, 33, 18), 30, Color.rgb(110, 84, 33)));
+        return c;
+    }
+
+    EditText input(String hint) {
         EditText e = new EditText(this);
         e.setHint(hint);
-        e.setTextColor(Color.WHITE);
-        e.setHintTextColor(Color.rgb(145, 137, 122));
-        e.setTextSize(15);
-        e.setPadding(dp(14), dp(10), dp(14), dp(10));
-        e.setMinHeight(dp(54));
-        e.setSingleLine(false);
-        e.setBackground(strokeBg(Color.rgb(22, 19, 15), 14, line));
+        e.setTextSize(16);
+        e.setTextColor(WHITE);
+        e.setHintTextColor(Color.rgb(150, 141, 125));
+        e.setPadding(dp(14), 0, dp(14), 0);
+        e.setMinHeight(dp(52));
+        e.setSingleLine(true);
+        e.setBackground(outlined(FIELD, 14, BORDER));
+        if (Build.VERSION.SDK_INT >= 21) e.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
         return e;
     }
 
-    void add(View parent, View child, int w, int h, int l, int t, int r, int b) {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w, h);
-        lp.setMargins(dp(l), dp(t), dp(r), dp(b));
-        ((ViewGroup)parent).addView(child, lp);
+    Spinner spinner(String[] items) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items) {
+            @Override public View getView(int position, View convertView, ViewGroup parent) {
+                TextView v = (TextView) super.getView(position, convertView, parent);
+                v.setTextColor(WHITE); v.setTextSize(16); v.setPadding(dp(14),0,dp(14),0);
+                return v;
+            }
+            @Override public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                TextView v = (TextView) super.getDropDownView(position, convertView, parent);
+                v.setTextColor(Color.rgb(20,16,10)); v.setTextSize(16); v.setPadding(dp(16),dp(12),dp(16),dp(12));
+                return v;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        Spinner s = new Spinner(this);
+        s.setAdapter(adapter);
+        s.setPadding(0, 0, dp(8), 0);
+        s.setBackground(outlined(FIELD, 14, BORDER));
+        return s;
     }
+
+    void label(LinearLayout parent, String s) { add(parent, tv(s, 13, HONEY_LIGHT, Typeface.BOLD), -1, -2, 2, 12, 0, 5); }
 
     void base(String screen) {
         activeTab = screen;
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(dark);
-        root.setPadding(dp(16), dp(10), dp(16), 0);
+        root.setBackgroundColor(BG);
+        root.setPadding(dp(14), statusBar() + dp(8), dp(14), dp(8));
 
-        LinearLayout headerCard = new LinearLayout(this);
-        headerCard.setOrientation(LinearLayout.VERTICAL);
-        headerCard.setPadding(dp(16), dp(14), dp(16), dp(14));
-        headerCard.setBackground(strokeBg(panel, 20, Color.rgb(62, 51, 35)));
-
-        LinearLayout top = new LinearLayout(this);
-        top.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(12), dp(10), dp(12), dp(10));
+        header.setBackground(outlined(Color.rgb(20, 17, 13), 20, Color.rgb(54, 43, 28)));
         ImageView logo = new ImageView(this);
         logo.setImageResource(getResources().getIdentifier("vb_logo", "drawable", getPackageName()));
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        add(top, logo, dp(54), dp(54), 0, 0, 12, 0);
+        add(header, logo, dp(38), dp(38), 0, 0, 10, 0);
+        LinearLayout titleBox = new LinearLayout(this);
+        titleBox.setOrientation(LinearLayout.VERTICAL);
+        titleBox.addView(tv("VB Expense Keeper", 21, HONEY, Typeface.BOLD));
+        titleBox.addView(tv("Virtual Beehive Inc. private bookkeeping", 12, MUTED, Typeface.NORMAL));
+        header.addView(titleBox, new LinearLayout.LayoutParams(0, -2, 1));
+        add(root, header, -1, -2, 0, 0, 0, 12);
 
-        LinearLayout titles = new LinearLayout(this);
-        titles.setOrientation(LinearLayout.VERTICAL);
-        titles.addView(text("VB Expense Keeper", 24, honey, Typeface.BOLD));
-        TextView sub = text("Private bookkeeping for Virtual Beehive Inc.", 13, muted, Typeface.NORMAL);
-        titles.addView(sub);
-        top.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
-        headerCard.addView(top);
-
-        LinearLayout chips = new LinearLayout(this);
-        chips.setOrientation(LinearLayout.HORIZONTAL);
-        add(chips, pill("No delete audit trail"), -2, -2, 0, 12, 8, 0);
-        add(chips, pill("Local v1"), -2, -2, 0, 12, 0, 0);
-        headerCard.addView(chips);
-        add(root, headerCard, -1, -2, 0, 6, 0, 12);
-
-        TextView screenTitle = text(screen, 28, Color.WHITE, Typeface.BOLD);
+        TextView screenTitle = tv(screen, 30, WHITE, Typeface.BOLD);
         add(root, screenTitle, -1, -2, 2, 0, 0, 8);
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(false);
+        scroll.setFillViewport(true);
+        scroll.setBackgroundColor(BG);
         body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(0, 0, 0, dp(12));
-        scroll.addView(body);
+        scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        root.addView(bottomNav(), new LinearLayout.LayoutParams(-1, dp(76)));
-        setContentView(root);
+        add(root, bottomNav(), -1, dp(70), 0, 6, 0, 0);
+        setContentView(root, new ViewGroup.LayoutParams(-1, -1));
     }
 
     LinearLayout bottomNav() {
         LinearLayout nav = new LinearLayout(this);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(dp(4), dp(8), dp(4), dp(8));
-        nav.setBackground(strokeBg(Color.rgb(19, 16, 12), 22, Color.rgb(55, 45, 31)));
-        String[] names = {"Dashboard", "Add", "Records", "Profile"};
-        String[] labels = {"⌂\nHome", "+\nAdd", "≡\nRecords", "●\nProfile"};
-        for (int i=0; i<names.length; i++) {
-            final String name = names[i];
-            TextView tab = text(labels[i], 11, name.equals(activeTab) ? Color.rgb(20,16,10) : muted, Typeface.BOLD);
+        nav.setPadding(dp(6), dp(6), dp(6), dp(6));
+        nav.setBackground(outlined(Color.rgb(21, 18, 13), 22, Color.rgb(58, 47, 31)));
+        String[] screens = {"Dashboard", "Add Expense", "Records", "Profile"};
+        String[] labels = {"Home", "Add", "Records", "Profile"};
+        for (int i=0; i<screens.length; i++) {
+            String scr = screens[i];
+            TextView tab = tv(labels[i], 12, scr.equals(activeTab) ? Color.rgb(18,13,6) : MUTED, Typeface.BOLD);
             tab.setGravity(Gravity.CENTER);
-            tab.setPadding(dp(4), dp(7), dp(4), dp(7));
-            tab.setBackground(name.equals(activeTab) ? bg(honey, 16) : bg(Color.TRANSPARENT, 16));
+            tab.setBackground(scr.equals(activeTab) ? round(HONEY, 16) : round(Color.TRANSPARENT, 16));
             tab.setOnClickListener(v -> {
-                if (name.equals("Dashboard")) showDashboard();
-                else if (name.equals("Add")) showAdd();
-                else if (name.equals("Records")) showRecords();
+                if (scr.equals("Dashboard")) showDashboard();
+                else if (scr.equals("Add Expense")) showAdd();
+                else if (scr.equals("Records")) showRecords();
                 else showProfile();
             });
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -1, 1);
@@ -179,22 +208,14 @@ public class MainActivity extends Activity {
         return nav;
     }
 
-    LinearLayout cardView(String title) {
+    LinearLayout card(String title) {
         LinearLayout c = new LinearLayout(this);
         c.setOrientation(LinearLayout.VERTICAL);
-        c.setPadding(dp(18), dp(16), dp(18), dp(16));
-        c.setBackground(strokeBg(card, 20, Color.rgb(59, 48, 34)));
-        TextView h = text(title, 18, honey, Typeface.BOLD);
-        c.addView(h);
-        add(body, c, -1, -2, 0, 8, 0, 10);
+        c.setPadding(dp(16), dp(15), dp(16), dp(15));
+        c.setBackground(outlined(CARD, 20, Color.rgb(60, 48, 32)));
+        c.addView(tv(title, 18, HONEY, Typeface.BOLD));
+        add(body, c, -1, -2, 0, 6, 0, 10);
         return c;
-    }
-
-    void smallCard(String title, String value) {
-        LinearLayout c = cardView(title);
-        TextView v = text(value, 17, Color.WHITE, Typeface.NORMAL);
-        v.setPadding(0, dp(8), 0, 0);
-        c.addView(v);
     }
 
     JSONArray getRecords() {
@@ -205,153 +226,116 @@ public class MainActivity extends Activity {
     public void showDashboard() {
         base("Dashboard");
         JSONArray records = getRecords();
-        LinearLayout summary = cardView("Expense Summary");
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(10), 0, 0);
-        TextView count = text(records.length()+"", 34, Color.WHITE, Typeface.BOLD);
-        TextView desc = text(" recorded expense(s)\nstored on this phone", 14, muted, Typeface.NORMAL);
-        row.addView(count);
-        row.addView(desc);
-        summary.addView(row);
 
-        LinearLayout quick = cardView("Quick Actions");
-        TextView addBtn = button("+ Record New Expense");
-        addBtn.setOnClickListener(v -> showAdd());
-        add(quick, addBtn, -1, -2, 0, 12, 0, 0);
-        TextView viewBtn = text("View saved records  →", 15, honey2, Typeface.BOLD);
-        viewBtn.setGravity(Gravity.CENTER);
-        viewBtn.setPadding(0, dp(14), 0, dp(2));
-        viewBtn.setOnClickListener(v -> showRecords());
-        quick.addView(viewBtn);
+        LinearLayout hero = card("This Year");
+        TextView big = tv(records.length() + " expense record" + (records.length()==1 ? "" : "s"), 24, WHITE, Typeface.BOLD);
+        big.setPadding(0, dp(8), 0, dp(4)); hero.addView(big);
+        hero.addView(tv("Stored locally on this phone. Google Drive/Sheets is the next connection step.", 14, MUTED, Typeface.NORMAL));
 
-        LinearLayout rules = cardView("Bookkeeping Rules");
-        TextView copy = text("Expenses cannot be deleted from the record list. If a mistake happens, add a correction note later. Google Drive/Sheets connection will be added after APK testing.", 15, Color.WHITE, Typeface.NORMAL);
-        copy.setPadding(0, dp(8), 0, 0);
-        rules.addView(copy);
-    }
+        LinearLayout quick = card("Quick Actions");
+        TextView addExpense = primaryButton("+ Add New Expense");
+        addExpense.setOnClickListener(v -> showAdd());
+        add(quick, addExpense, -1, -2, 0, 12, 0, 8);
+        TextView viewRecords = secondaryButton("View Records");
+        viewRecords.setOnClickListener(v -> showRecords());
+        add(quick, viewRecords, -1, -2, 0, 0, 0, 0);
 
-    public void showProfile() {
-        base("Profile");
-        LinearLayout c = cardView("User Profile");
-        TextView avatar = text("Add Profile Photo", 16, honey, Typeface.BOLD);
-        avatar.setGravity(Gravity.CENTER);
-        avatar.setPadding(0, dp(22), 0, dp(22));
-        avatar.setBackground(strokeBg(Color.rgb(22, 18, 14), 24, honey));
-        avatar.setOnClickListener(v -> {
-            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(i, 55);
-        });
-        add(c, avatar, -1, -2, 0, 12, 0, 12);
-
-        EditText name = field("Full name"); name.setText(sp.getString("name", "Daniel Pirooz"));
-        EditText pos = field("Position"); pos.setText(sp.getString("position", "CEO / Founder"));
-        EditText email = field("Email"); email.setText(sp.getString("email", "danny@virtualbeehiveinc.com"));
-        add(c, name, -1, -2, 0, 4, 0, 10);
-        add(c, pos, -1, -2, 0, 0, 0, 10);
-        add(c, email, -1, -2, 0, 0, 0, 14);
-        TextView save = button("Save Profile");
-        save.setOnClickListener(v -> {
-            sp.edit().putString("name", name.getText().toString()).putString("position", pos.getText().toString()).putString("email", email.getText().toString()).apply();
-            Toast.makeText(this, "Profile saved", Toast.LENGTH_LONG).show();
-            showDashboard();
-        });
-        c.addView(save);
+        LinearLayout rules = card("Bookkeeping Rule");
+        rules.addView(tv("No user can delete a recorded expense. If a mistake happens, create a correction note later so the audit trail stays clean.", 15, WHITE, Typeface.NORMAL));
+        LinearLayout chips = new LinearLayout(this); chips.setOrientation(LinearLayout.HORIZONTAL);
+        add(chips, chip("No Delete"), -2, -2, 0, 12, 8, 0);
+        add(chips, chip("Reference #"), -2, -2, 0, 12, 8, 0);
+        add(chips, chip("CPA Ready"), -2, -2, 0, 12, 0, 0);
+        rules.addView(chips);
     }
 
     public void showAdd() {
         base("Add Expense");
-        LinearLayout c = cardView("New Expense");
-        c.addView(text("Only a few fields are required. The profile and timestamp are added automatically.", 14, muted, Typeface.NORMAL));
+        LinearLayout c = card("New Expense");
+        c.addView(tv("Enter only the key details. Your profile, timestamp, and reference number are added automatically.", 14, MUTED, Typeface.NORMAL));
 
-        TextView label1 = text("Category", 13, honey, Typeface.BOLD);
-        add(c, label1, -1, -2, 0, 14, 0, 4);
-        Spinner cat = new Spinner(this);
-        cat.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, categories));
-        cat.setBackground(strokeBg(Color.rgb(22, 19, 15), 14, line));
-        add(c, cat, -1, dp(54), 0, 0, 0, 10);
+        label(c, "Category"); Spinner cat = spinner(categories); add(c, cat, -1, dp(52), 0, 0, 0, 2);
+        label(c, "Frequency"); Spinner freq = spinner(new String[]{"One-time", "Monthly recurring", "Yearly recurring"}); add(c, freq, -1, dp(52), 0, 0, 0, 2);
 
-        TextView label2 = text("Frequency", 13, honey, Typeface.BOLD);
-        add(c, label2, -1, -2, 0, 0, 0, 4);
-        Spinner freq = new Spinner(this);
-        freq.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"One-time", "Monthly recurring", "Yearly recurring"}));
-        freq.setBackground(strokeBg(Color.rgb(22, 19, 15), 14, line));
-        add(c, freq, -1, dp(54), 0, 0, 0, 10);
+        label(c, "Amount"); EditText amount = input("49.99"); add(c, amount, -1, -2, 0, 0, 0, 2);
+        label(c, "Title"); EditText title = input("Expense title"); add(c, title, -1, -2, 0, 0, 0, 2);
+        label(c, "Description / Business Purpose"); EditText desc = input("Why this was for business"); desc.setSingleLine(false); desc.setMinLines(2); add(c, desc, -1, dp(76), 0, 0, 0, 2);
+        label(c, "Vendor / Store"); EditText vendor = input("Vendor name"); add(c, vendor, -1, -2, 0, 0, 0, 12);
 
-        EditText amount = field("Amount, e.g. 49.99");
-        EditText title = field("Expense title");
-        EditText desc = field("Description / business purpose");
-        EditText vendor = field("Vendor / store");
-        add(c, amount, -1, -2, 0, 0, 0, 10);
-        add(c, title, -1, -2, 0, 0, 0, 10);
-        add(c, desc, -1, dp(88), 0, 0, 0, 10);
-        add(c, vendor, -1, -2, 0, 0, 0, 12);
+        TextView attach = secondaryButton("Take Photo or Attach Receipt");
+        attach.setOnClickListener(v -> { Intent i = new Intent(Intent.ACTION_GET_CONTENT); i.setType("image/*"); startActivityForResult(Intent.createChooser(i, "Select receipt"), 77); });
+        add(c, attach, -1, -2, 0, 2, 0, 8);
 
-        LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(LinearLayout.HORIZONTAL);
-        TextView receipt = button("Attach Receipt");
-        receipt.setTextSize(13);
-        receipt.setOnClickListener(v -> {
-            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-            i.setType("image/*");
-            startActivityForResult(Intent.createChooser(i, "Select receipt"), 77);
-        });
-        TextView scan = button("AI Scan Demo");
-        scan.setTextSize(13);
-        scan.setOnClickListener(v -> {
-            vendor.setText("Detected Vendor"); amount.setText("49.99"); title.setText("AI tool subscription");
-            desc.setText("Business AI productivity tool for Virtual Beehive Inc."); cat.setSelection(1);
-        });
-        LinearLayout.LayoutParams half = new LinearLayout.LayoutParams(0, -2, 1);
-        half.setMargins(0,0,dp(6),0); actions.addView(receipt, half);
-        LinearLayout.LayoutParams half2 = new LinearLayout.LayoutParams(0, -2, 1);
-        half2.setMargins(dp(6),0,0,0); actions.addView(scan, half2);
-        add(c, actions, -1, -2, 0, 0, 0, 14);
+        TextView scan = secondaryButton("Simulate AI Scan");
+        scan.setOnClickListener(v -> { vendor.setText("Detected Vendor"); amount.setText("49.99"); title.setText("AI tool subscription"); desc.setText("Business AI productivity tool for Virtual Beehive Inc."); cat.setSelection(1); });
+        add(c, scan, -1, -2, 0, 0, 0, 12);
 
-        TextView save = button("Record Expense Securely");
-        save.setOnClickListener(v -> {
-            if (amount.getText().toString().trim().isEmpty() || title.getText().toString().trim().isEmpty()) {
-                Toast.makeText(this, "Please enter amount and title.", Toast.LENGTH_LONG).show();
-                return;
-            }
-            String year = new SimpleDateFormat("yyyy", Locale.US).format(new Date());
-            String ref = "VB-" + year + "-" + String.format(Locale.US, "%06d", getRecords().length()+1);
-            JSONObject o = new JSONObject();
-            try {
-                o.put("ref", ref); o.put("date", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(new Date()));
-                o.put("by", sp.getString("name", "Daniel Pirooz")); o.put("position", sp.getString("position", "CEO / Founder"));
-                o.put("category", cat.getSelectedItem().toString()); o.put("frequency", freq.getSelectedItem().toString());
-                o.put("amount", amount.getText().toString()); o.put("title", title.getText().toString());
-                o.put("description", desc.getText().toString()); o.put("vendor", vendor.getText().toString());
-            } catch(Exception ignored) {}
-            JSONArray arr = getRecords(); arr.put(o);
-            sp.edit().putString("records", arr.toString()).apply();
-            new AlertDialog.Builder(this)
-                    .setTitle("Expense recorded")
-                    .setMessage("Reference Number:\n" + ref + "\n\nThis record is locked in the local audit list.")
-                    .setPositiveButton("View Dashboard", (d,w) -> showDashboard())
-                    .setNegativeButton("Add Another", (d,w) -> showAdd())
-                    .show();
-        });
-        c.addView(save);
+        TextView save = primaryButton("Record Expense");
+        save.setOnClickListener(v -> saveExpense(cat, freq, amount, title, desc, vendor));
+        add(c, save, -1, -2, 0, 0, 0, 0);
+    }
+
+    void saveExpense(Spinner cat, Spinner freq, EditText amount, EditText title, EditText desc, EditText vendor) {
+        if (amount.getText().toString().trim().isEmpty() || title.getText().toString().trim().isEmpty()) {
+            Toast.makeText(this, "Please enter amount and title.", Toast.LENGTH_LONG).show(); return;
+        }
+        String year = new SimpleDateFormat("yyyy", Locale.US).format(new Date());
+        String ref = "VB-" + year + "-" + String.format(Locale.US, "%06d", getRecords().length()+1);
+        JSONObject o = new JSONObject();
+        try {
+            o.put("ref", ref);
+            o.put("date", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(new Date()));
+            o.put("by", sp.getString("name", "Daniel Pirooz"));
+            o.put("position", sp.getString("position", "CEO / Founder"));
+            o.put("category", cat.getSelectedItem().toString());
+            o.put("frequency", freq.getSelectedItem().toString());
+            o.put("amount", amount.getText().toString());
+            o.put("title", title.getText().toString());
+            o.put("description", desc.getText().toString());
+            o.put("vendor", vendor.getText().toString());
+        } catch(Exception ignored) {}
+        JSONArray arr = getRecords(); arr.put(o);
+        sp.edit().putString("records", arr.toString()).apply();
+        new AlertDialog.Builder(this)
+                .setTitle("Expense recorded")
+                .setMessage("Reference Number:\n" + ref + "\n\nThis record is locked in the local audit list.")
+                .setPositiveButton("Dashboard", (d,w) -> showDashboard())
+                .setNegativeButton("Add Another", (d,w) -> showAdd())
+                .show();
     }
 
     public void showRecords() {
         base("Records");
         JSONArray arr = getRecords();
-        if (arr.length() == 0) {
-            LinearLayout empty = cardView("No Records Yet");
-            empty.addView(text("Add your first Virtual Beehive Inc. expense. Saved expenses will appear here with locked reference numbers.", 15, Color.WHITE, Typeface.NORMAL));
+        if (arr.length()==0) {
+            LinearLayout e = card("No Records Yet");
+            e.addView(tv("Add an expense and it will appear here with a locked Virtual Beehive reference number.", 15, WHITE, Typeface.NORMAL));
             return;
         }
-        for (int i = arr.length()-1; i >= 0; i--) {
+        for (int i=arr.length()-1; i>=0; i--) {
             try {
                 JSONObject o = arr.getJSONObject(i);
-                LinearLayout c = cardView(o.optString("ref"));
-                TextView amount = text("$" + o.optString("amount") + "  •  " + o.optString("title"), 18, Color.WHITE, Typeface.BOLD);
-                amount.setPadding(0, dp(8), 0, dp(5)); c.addView(amount);
-                c.addView(text(o.optString("category") + "\n" + o.optString("frequency") + "\n" + o.optString("date") + "\nEntered by: " + o.optString("by"), 14, muted, Typeface.NORMAL));
+                LinearLayout c = card(o.optString("ref"));
+                TextView main = tv("$" + o.optString("amount") + "  •  " + o.optString("title"), 18, WHITE, Typeface.BOLD);
+                main.setPadding(0, dp(8), 0, dp(6)); c.addView(main);
+                c.addView(tv(o.optString("category") + "\n" + o.optString("frequency") + "\n" + o.optString("date") + "\nEntered by: " + o.optString("by"), 14, MUTED, Typeface.NORMAL));
             } catch(Exception ignored) {}
         }
+    }
+
+    public void showProfile() {
+        base("Profile");
+        LinearLayout c = card("User Profile");
+        TextView avatar = tv("+ Add Profile Picture", 16, HONEY_LIGHT, Typeface.BOLD);
+        avatar.setGravity(Gravity.CENTER); avatar.setPadding(0, dp(22), 0, dp(22));
+        avatar.setBackground(outlined(Color.rgb(22, 18, 14), 24, HONEY));
+        avatar.setOnClickListener(v -> { Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI); startActivityForResult(i, 55); });
+        add(c, avatar, -1, -2, 0, 10, 0, 12);
+        label(c, "Full Name"); EditText name = input("Full name"); name.setText(sp.getString("name", "Daniel Pirooz")); add(c, name, -1, -2, 0, 0, 0, 2);
+        label(c, "Position"); EditText pos = input("Position"); pos.setText(sp.getString("position", "CEO / Founder")); add(c, pos, -1, -2, 0, 0, 0, 2);
+        label(c, "Email"); EditText email = input("Email"); email.setText(sp.getString("email", "danny@virtualbeehiveinc.com")); add(c, email, -1, -2, 0, 0, 0, 12);
+        TextView save = primaryButton("Save Profile");
+        save.setOnClickListener(v -> { sp.edit().putString("name", name.getText().toString()).putString("position", pos.getText().toString()).putString("email", email.getText().toString()).apply(); Toast.makeText(this,"Profile saved",Toast.LENGTH_LONG).show(); showDashboard(); });
+        add(c, save, -1, -2, 0, 0, 0, 0);
     }
 }
